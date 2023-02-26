@@ -1,0 +1,37 @@
+name: CI
+
+on:
+
+  push:
+    branches:
+      - main
+    paths:
+      - src/**
+      - include/**
+      - .github/workflows/ci.yml
+
+jobs:
+
+  build-and-run:
+    name: Compile and execute library
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nprocs: [1, 2, 4, 8, 16, 32, 64, 128]
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update && \
+          sudo apt-get -y install make libopenmpi-dev libfftw3-dev
+      - name: Checkout repository
+        uses: actions/checkout@v1
+        with:
+          repository: 'NaokiHori/FastHelmholtzSolver'
+          ref: ${{ github.ref_name }}
+      - name: Compile
+        run: |
+          make all
+      - name: Run case
+        run: |
+          mpirun -n ${{ matrix.nprocs }} --oversubscribe ./a.out
+
